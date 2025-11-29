@@ -10,10 +10,8 @@ class MesaController extends Controller
 {
     public function index()
     {
-        #$mesas = Mesa::latest()->paginate(10);
-        #return view('admin.mesas.index', compact('mesas'));
-        return view('mantenimiento');
-
+        $mesas = Mesa::latest()->paginate(10);
+        return view('admin.mesas.index', compact('mesas'));
     }
 
     public function create()

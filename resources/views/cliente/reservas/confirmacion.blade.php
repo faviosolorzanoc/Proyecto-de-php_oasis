@@ -2,33 +2,7 @@
 
 @section('title', 'Reserva Confirmada')
 
-@section('styles')
-<style>
-    .check-animation {
-        width: 100px;
-        height: 100px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #28a745, #20c997);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 30px;
-        animation: scaleIn 0.5s ease-out;
-    }
-    @keyframes scaleIn {
-        from {
-            transform: scale(0);
-        }
-        to {
-            transform: scale(1);
-        }
-    }
-    .confirmation-card {
-        border-radius: 20px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-    }
-</style>
-@endsection
+
 
 @section('content')
 <div class="container py-5">
@@ -78,7 +52,7 @@
                                 <div class="col-md-6 mb-3">
                                     <strong>💰 Total:</strong><br>
                                     <span style="color: var(--color-primary); font-size: 1.2rem; font-weight: bold;">
-                                        ${{ number_format($reserva->total, 2) }}
+                                        S/.{{ number_format($reserva->total, 2) }}
                                     </span>
                                 </div>
                             </div>

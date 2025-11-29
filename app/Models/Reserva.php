@@ -12,6 +12,7 @@ class Reserva extends Model
     protected $fillable = [
         'user_id',
         'espacio_id',
+        'horario_id',  // ← Debe estar aquí
         'fecha_evento',
         'hora_inicio',
         'hora_fin',
@@ -38,5 +39,10 @@ class Reserva extends Model
     public function espacio()
     {
         return $this->belongsTo(Espacio::class);
+    }
+
+    public function horario()
+    {
+        return $this->belongsTo(Horario::class);
     }
 }

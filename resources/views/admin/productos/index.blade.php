@@ -29,7 +29,7 @@
                             <td>{{ $producto->id }}</td>
                             <td>{{ $producto->nombre }}</td>
                             <td><span class="badge bg-info">{{ ucfirst($producto->categoria) }}</span></td>
-                            <td>${{ number_format($producto->precio, 2) }}</td>
+                            <td>S/.{{ number_format($producto->precio, 2) }}</td>
                             <td>{{ $producto->stock }}</td>
                             <td>
                                 <span class="badge bg-{{ $producto->disponible ? 'success' : 'danger' }}">

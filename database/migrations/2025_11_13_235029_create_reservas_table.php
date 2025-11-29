@@ -21,7 +21,7 @@ return new class extends Migration
             $table->enum('metodo_pago', ['efectivo', 'yape', 'tarjeta'])->nullable();
             $table->enum('estado_pago', ['pendiente', 'pagado'])->default('pendiente');
             $table->text('observaciones')->nullable();
-            $table->text('servicios_adicionales')->nullable(); // JSON de servicios extras
+            $table->text('servicios_adicionales')->nullable();
             $table->timestamps();
         });
     }

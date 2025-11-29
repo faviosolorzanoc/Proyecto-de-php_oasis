@@ -46,7 +46,7 @@
                 <div class="col-md-6 mb-3">
                     <label for="precio" class="form-label">Precio *</label>
                     <div class="input-group">
-                        <span class="input-group-text">$</span>
+                        <span class="input-group-text">S/.</span>
                         <input type="number" 
                                step="0.01" 
                                class="form-control @error('precio') is-invalid @enderror" 
@@ -67,18 +67,6 @@
                               name="descripcion" 
                               rows="4">{{ old('descripcion', $servicio->descripcion) }}</textarea>
                     @error('descripcion')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="col-md-12 mb-3">
-                    <label for="imagen" class="form-label">URL de Imagen (Opcional)</label>
-                    <input type="text" 
-                           class="form-control @error('imagen') is-invalid @enderror" 
-                           id="imagen" 
-                           name="imagen" 
-                           value="{{ old('imagen', $servicio->imagen) }}">
-                    @error('imagen')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>

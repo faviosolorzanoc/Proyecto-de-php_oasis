@@ -20,7 +20,7 @@
                     <h5 class="card-title" style="color: var(--color-primary);">{{ $servicio->nombre }}</h5>
                     <p class="card-text">{{ $servicio->descripcion ?? 'Sin descripción' }}</p>
                     <div class="d-flex justify-content-between align-items-center">
-                        <span class="h5 mb-0" style="color: var(--color-secondary);">${{ number_format($servicio->precio, 2) }}</span>
+                        <span class="h5 mb-0" style="color: var(--color-secondary);">S/.{{ number_format($servicio->precio, 2) }}</span>
                         <span class="badge bg-success">Disponible</span>
                     </div>
                 </div>

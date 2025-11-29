@@ -25,7 +25,7 @@
             </div>
         @endif
 
-        <form action="{{ route('admin.espacios.store') }}" method="POST">
+        <form action="{{ route('admin.espacios.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
             
             <div class="row">
@@ -36,7 +36,7 @@
                            id="nombre" 
                            name="nombre" 
                            value="{{ old('nombre') }}" 
-                           placeholder="Ej: Área de Piscina o Salón de Eventos"
+                           placeholder="Ej: Piscina Principal"
                            required>
                     @error('nombre')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -61,7 +61,7 @@
                 <div class="col-md-3 mb-3">
                     <label for="precio_hora" class="form-label">Precio por Hora *</label>
                     <div class="input-group">
-                        <span class="input-group-text">$</span>
+                        <span class="input-group-text">S/.</span>
                         <input type="number" 
                                step="0.01" 
                                class="form-control @error('precio_hora') is-invalid @enderror" 
@@ -82,21 +82,20 @@
                               id="descripcion" 
                               name="descripcion" 
                               rows="4"
-                              placeholder="Describe el espacio físico (ubicación, características, qué incluye, etc.)">{{ old('descripcion') }}</textarea>
+                              placeholder="Describe las características del espacio...">{{ old('descripcion') }}</textarea>
                     @error('descripcion')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
 
                 <div class="col-md-12 mb-3">
-                    <label for="imagen" class="form-label">URL de Imagen (Opcional)</label>
-                    <input type="text" 
+                    <label for="imagen" class="form-label">📷 Imagen del Espacio (Opcional)</label>
+                    <input type="file" 
                            class="form-control @error('imagen') is-invalid @enderror" 
                            id="imagen" 
-                           name="imagen" 
-                           value="{{ old('imagen') }}"
-                           placeholder="https://ejemplo.com/imagen.jpg">
-                    <small class="text-muted">Puedes usar enlaces de imágenes desde internet</small>
+                           name="imagen"
+                           accept="image/*">
+                    <small class="text-muted">Formatos: JPG, JPEG, PNG, GIF. Máximo 2MB</small>
                     @error('imagen')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror

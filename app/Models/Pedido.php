@@ -11,9 +11,11 @@ class Pedido extends Model
 
     protected $fillable = [
         'user_id',
+        'reserva_id',
         'mesa_id',
         'total',
         'estado',
+        'metodo_pago',
         'observaciones',
     ];
 
@@ -24,6 +26,11 @@ class Pedido extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function reserva()
+    {
+        return $this->belongsTo(Reserva::class);
     }
 
     public function mesa()

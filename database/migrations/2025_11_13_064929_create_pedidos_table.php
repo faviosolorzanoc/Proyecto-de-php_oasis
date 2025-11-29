@@ -11,9 +11,11 @@ return new class extends Migration
         Schema::create('pedidos', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('mesa_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignId('reserva_id')->nullable()->constrained('reservas')->onDelete('set null');
+            $table->foreignId('mesa_id')->nullable()->constrained('mesas')->onDelete('set null');
             $table->decimal('total', 10, 2);
             $table->enum('estado', ['pendiente', 'en_preparacion', 'listo', 'entregado', 'cancelado'])->default('pendiente');
+            $table->enum('metodo_pago', ['efectivo', 'yape', 'tarjeta'])->nullable();
             $table->text('observaciones')->nullable();
             $table->timestamps();
         });

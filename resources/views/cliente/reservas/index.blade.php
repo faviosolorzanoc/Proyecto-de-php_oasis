@@ -2,26 +2,10 @@
 
 @section('title', 'Organizar Evento')
 
-@section('styles')
-<style>
-    .reserva-header {
-        background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
-        color: white;
-        padding: 50px 0;
-        border-radius: 0 0 30px 30px;
-        margin-bottom: 40px;
-    }
-    .form-card {
-        border-radius: 20px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-    }
-</style>
-@endsection
-
 @section('content')
-<div class="reserva-header">
+<div class="reserva-header fade-in">
     <div class="container text-center">
-        <h1 class="display-4 fw-bold">Organiza tu Evento Perfecto</h1>
+        <h1 class="display-4 fw-bold mb-3">Organiza tu Evento Perfecto</h1>
         <p class="lead">Completa el formulario para verificar disponibilidad</p>
     </div>
 </div>
@@ -76,40 +60,14 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
-
-                            <div class="col-md-6 mb-3">
-                                <label for="hora_inicio" class="form-label">🕐 Hora de Inicio *</label>
-                                <input type="time" 
-                                       class="form-control @error('hora_inicio') is-invalid @enderror" 
-                                       id="hora_inicio" 
-                                       name="hora_inicio" 
-                                       value="{{ old('hora_inicio') }}"
-                                       required>
-                                @error('hora_inicio')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="col-md-6 mb-3">
-                                <label for="hora_fin" class="form-label">🕐 Hora de Fin *</label>
-                                <input type="time" 
-                                       class="form-control @error('hora_fin') is-invalid @enderror" 
-                                       id="hora_fin" 
-                                       name="hora_fin" 
-                                       value="{{ old('hora_fin') }}"
-                                       required>
-                                @error('hora_fin')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
                         </div>
 
                         <div class="alert alert-info mt-3">
-                            <strong>💡 Nota:</strong> Te mostraremos los espacios disponibles según tu fecha, hora y cantidad de personas.
+                            <strong>💡 Siguiente paso:</strong> Te mostraremos los espacios disponibles según el número de personas que ingresaste.
                         </div>
 
                         <button type="submit" class="btn btn-primary btn-lg w-100 mt-4">
-                            Verificar Disponibilidad
+                            Ver Espacios Disponibles
                         </button>
                     </form>
                 </div>

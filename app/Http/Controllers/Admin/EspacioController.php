@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Espacio;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class EspacioController extends Controller
 {
@@ -26,10 +27,22 @@ class EspacioController extends Controller
             'descripcion' => 'nullable|string',
             'capacidad' => 'required|integer|min:1',
             'precio_hora' => 'required|numeric|min:0',
-            'imagen' => 'nullable|string',
+            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        Espacio::create($request->all());
+        $data = $request->except('imagen');
+        
+        // Manejar la imagen - MÉTODO ANTIGUO
+        if ($request->hasFile('imagen')) {
+            $imagen = $request->file('imagen');
+            $nombreImagen = time() . '_' . $imagen->getClientOriginalName();
+            $imagen->move(public_path('storage'), $nombreImagen);
+            $data['imagen'] = $nombreImagen;
+        }
+
+        $data['disponible'] = $request->has('disponible') ? 1 : 0;
+
+        Espacio::create($data);
 
         return redirect()->route('admin.espacios.index')->with('success', 'Espacio creado exitosamente');
     }
@@ -46,10 +59,24 @@ class EspacioController extends Controller
             'descripcion' => 'nullable|string',
             'capacidad' => 'required|integer|min:1',
             'precio_hora' => 'required|numeric|min:0',
-            'imagen' => 'nullable|string',
+            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        $data = $request->all();
+        $data = $request->except('imagen');
+        
+        // Manejar la nueva imagen - MÉTODO ANTIGUO
+        if ($request->hasFile('imagen')) {
+            // Eliminar imagen anterior si existe
+            if ($espacio->imagen && file_exists(public_path('storage/' . $espacio->imagen))) {
+                unlink(public_path('storage/' . $espacio->imagen));
+            }
+            
+            $imagen = $request->file('imagen');
+            $nombreImagen = time() . '_' . $imagen->getClientOriginalName();
+            $imagen->move(public_path('storage'), $nombreImagen);
+            $data['imagen'] = $nombreImagen;
+        }
+
         $data['disponible'] = $request->has('disponible') ? 1 : 0;
         
         $espacio->update($data);
@@ -59,6 +86,11 @@ class EspacioController extends Controller
 
     public function destroy(Espacio $espacio)
     {
+        // Eliminar imagen al borrar el espacio
+        if ($espacio->imagen && file_exists(public_path('storage/' . $espacio->imagen))) {
+            unlink(public_path('storage/' . $espacio->imagen));
+        }
+        
         $espacio->delete();
         return redirect()->route('admin.espacios.index')->with('success', 'Espacio eliminado exitosamente');
     }

@@ -25,10 +25,12 @@ class ServicioController extends Controller
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'precio' => 'required|numeric|min:0',
-            'imagen' => 'nullable|string',
         ]);
 
-        Servicio::create($request->all());
+        $data = $request->only(['nombre', 'descripcion', 'precio']);
+        $data['disponible'] = $request->has('disponible') ? 1 : 0;
+
+        Servicio::create($data);
 
         return redirect()->route('admin.servicios.index')->with('success', 'Servicio creado exitosamente');
     }
@@ -44,10 +46,9 @@ class ServicioController extends Controller
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'precio' => 'required|numeric|min:0',
-            'imagen' => 'nullable|string',
         ]);
 
-        $data = $request->all();
+        $data = $request->only(['nombre', 'descripcion', 'precio']);
         $data['disponible'] = $request->has('disponible') ? 1 : 0;
         
         $servicio->update($data);

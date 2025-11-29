@@ -41,8 +41,8 @@
                                         <tr>
                                             <td>{{ $detalle->producto->nombre }}</td>
                                             <td>{{ $detalle->cantidad }}</td>
-                                            <td>${{ number_format($detalle->precio_unitario, 2) }}</td>
-                                            <td>${{ number_format($detalle->subtotal, 2) }}</td>
+                                            <td>S/.{{ number_format($detalle->precio_unitario, 2) }}</td>
+                                            <td>S/.{{ number_format($detalle->subtotal, 2) }}</td>
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -58,7 +58,7 @@
                                     <hr>
                                     <div class="d-flex justify-content-between">
                                         <strong>Total:</strong>
-                                        <strong style="color: var(--color-primary); font-size: 1.2rem;">${{ number_format($pedido->total, 2) }}</strong>
+                                        <strong style="color: var(--color-primary); font-size: 1.2rem;">S/.{{ number_format($pedido->total, 2) }}</strong>
                                     </div>
                                 </div>
                             </div>

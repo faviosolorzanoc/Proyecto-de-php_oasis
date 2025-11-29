@@ -43,7 +43,7 @@
                                 <td><strong>#{{ $servicio->id }}</strong></td>
                                 <td>{{ $servicio->nombre }}</td>
                                 <td>{{ Str::limit($servicio->descripcion, 50) ?? 'Sin descripción' }}</td>
-                                <td><strong>${{ number_format($servicio->precio, 2) }}</strong></td>
+                                <td><strong>S/.{{ number_format($servicio->precio, 2) }}</strong></td>
                                 <td>
                                     <span class="badge bg-{{ $servicio->disponible ? 'success' : 'danger' }}">
                                         {{ $servicio->disponible ? '✓ Disponible' : '✗ No disponible' }}

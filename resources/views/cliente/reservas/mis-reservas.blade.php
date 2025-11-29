@@ -6,6 +6,20 @@
 <div class="container py-4">
     <h1 class="mb-4" style="color: var(--color-primary);">📋 Mis Reservas</h1>
 
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
     @if($reservas->isEmpty())
         <div class="card shadow-sm">
             <div class="card-body text-center py-5">
@@ -25,7 +39,7 @@
                         <div class="card-header d-flex justify-content-between align-items-center" 
                              style="background-color: {{ 
                                 $reserva->estado == 'confirmada' ? '#28a745' : 
-                                ($reserva->estado == 'completada' ? 'var(--color-primary)' : '#3572dcff')
+                                ($reserva->estado == 'completada' ? 'var(--color-primary)' : '#6c757d')
                              }}; color: white;">
                             <div>
                                 <h5 class="mb-0">
@@ -106,28 +120,24 @@
                                         <div class="card-body text-center">
                                             <h6 class="mb-3" style="color: var(--color-primary);">Total de la Reserva</h6>
                                             <h2 class="mb-3" style="color: var(--color-primary);">
-                                                ${{ number_format($reserva->total, 2) }}
+                                                S/.{{ number_format($reserva->total, 2) }}
                                             </h2>
 
                                             @if($reserva->estado == 'confirmada')
                                                 <div class="d-grid gap-2">
-                                                    <a href="https://wa.me/51999888777?text=Hola, tengo una consulta sobre mi reserva #{{ str_pad($reserva->id, 6, '0', STR_PAD_LEFT) }}" 
-                                                       class="btn btn-success btn-sm" 
-                                                       target="_blank">
-                                                        💬 Contactar por WhatsApp
+                                                    <a href="mailto:info@sitiocampestre.com?subject=Consulta sobre Reserva #{{ str_pad($reserva->id, 6, '0', STR_PAD_LEFT) }}&body=Hola, tengo una consulta sobre mi reserva del día {{ \Carbon\Carbon::parse($reserva->fecha_evento)->format('d/m/Y') }}" 
+                                                    class="btn btn-primary btn-sm">
+                                                        📧 Contactar por Email
                                                     </a>
-                                                    <a href="tel:+51999888777" class="btn btn-primary btn-sm">
-                                                        📞 Llamar
-                                                    </a>
-                                                </div>
-                                            @elseif($reserva->estado == 'completada')
-                                                <div class="alert alert-success small mb-0">
-                                                    <strong>✓ Evento Realizado</strong><br>
-                                                    ¡Gracias por elegirnos!
-                                                </div>
-                                            @else
-                                                <div class="alert alert-danger small mb-0">
-                                                    <strong>✗ Reserva Cancelada</strong>
+                                                    
+                                                    <form action="{{ route('cliente.reservas.cancelar', $reserva->id) }}" 
+                                                        method="POST" 
+                                                        onsubmit="return confirm('¿Estás seguro de cancelar esta reserva? El horario quedará disponible nuevamente.')">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-danger btn-sm w-100">
+                                                            ❌ Cancelar Reserva
+                                                        </button>
+                                                    </form>
                                                 </div>
                                             @endif
                                         </div>

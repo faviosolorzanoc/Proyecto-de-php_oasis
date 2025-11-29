@@ -34,7 +34,7 @@
                     <h6 class="card-title" style="color: var(--color-primary);">{{ $producto->nombre }}</h6>
                     <p class="card-text small">{{ Str::limit($producto->descripcion, 60) }}</p>
                     <div class="d-flex justify-content-between align-items-center">
-                        <span class="h6 mb-0" style="color: var(--color-secondary);">${{ number_format($producto->precio, 2) }}</span>
+                        <span class="h6 mb-0" style="color: var(--color-secondary);">S/.{{ number_format($producto->precio, 2) }}</span>
                         <small class="text-muted">Stock: {{ $producto->stock }}</small>
                     </div>
                 </div>

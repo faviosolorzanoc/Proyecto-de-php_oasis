@@ -10,10 +10,8 @@ class PedidoController extends Controller
 {
     public function index()
     {
-        #$pedidos = Pedido::with('user', 'mesa')->latest()->paginate(15);
-        #return view('admin.pedidos.index', compact('pedidos'));
-
-        return view('mantenimiento');
+        $pedidos = Pedido::with('user', 'mesa')->latest()->paginate(15);
+        return view('admin.pedidos.index', compact('pedidos'));
     }
 
     public function show(Pedido $pedido)

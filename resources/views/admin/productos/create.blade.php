@@ -9,7 +9,7 @@
 
 <div class="card">
     <div class="card-body">
-        <form action="{{ route('admin.productos.store') }}" method="POST">
+        <form action="{{ route('admin.productos.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
             
             <div class="mb-3">
@@ -58,11 +58,12 @@
             </div>
 
             <div class="mb-3">
-                <label for="imagen" class="form-label">URL de Imagen</label>
-                <input type="text" class="form-control @error('imagen') is-invalid @enderror" id="imagen" name="imagen" value="{{ old('imagen') }}">
+                <label for="imagen" class="form-label">Imagen del Producto</label>
+                <input type="file" class="form-control @error('imagen') is-invalid @enderror" id="imagen" name="imagen" accept="image/*">
                 @error('imagen')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
+                <small class="form-text text-muted">Formatos permitidos: JPG, PNG, GIF. Tamaño máximo: 2MB</small>
             </div>
 
             <div class="mb-3 form-check">

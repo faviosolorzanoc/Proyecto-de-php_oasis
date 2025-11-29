@@ -22,4 +22,14 @@ class Espacio extends Model
         'disponible' => 'boolean',
         'precio_hora' => 'decimal:2',
     ];
+
+    public function horarios()
+    {
+        return $this->hasMany(Horario::class);
+    }
+
+    public function horariosDisponibles()
+    {
+        return $this->hasMany(Horario::class)->where('estado', 'disponible');
+    }
 }

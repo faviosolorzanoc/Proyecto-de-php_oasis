@@ -45,14 +45,19 @@
                                 <td>{{ $espacio->nombre }}</td>
                                 <td>{{ Str::limit($espacio->descripcion, 40) ?? 'Sin descripción' }}</td>
                                 <td><span class="badge bg-info">👥 {{ $espacio->capacidad }} personas</span></td>
-                                <td><strong>${{ number_format($espacio->precio_hora, 2) }}</strong></td>
+                                <td><strong>S/.{{ number_format($espacio->precio_hora, 2) }}</strong></td>
                                 <td>
                                     <span class="badge bg-{{ $espacio->disponible ? 'success' : 'danger' }}">
                                         {{ $espacio->disponible ? '✓ Disponible' : '✗ No disponible' }}
                                     </span>
                                 </td>
                                 <td>
-                                    <div class="d-flex gap-2">
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <a href="{{ route('admin.horarios.index', $espacio) }}" 
+                                           class="btn btn-info btn-sm" 
+                                           title="Gestionar Horarios">
+                                            🕐 Horarios
+                                        </a>
                                         <a href="{{ route('admin.espacios.edit', $espacio) }}" 
                                            class="btn btn-warning btn-sm" 
                                            title="Editar">
