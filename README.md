@@ -4,11 +4,10 @@
 bashcomposer install
 2. Configurar variables de entorno
 ⚠️ IMPORTANTE: Renombrar env a .env
-bash# Windows:
-ren env .env
-
-# Linux/Mac:
-mv env .env
+Windows:
+bashren env .env
+Linux/Mac:
+bashmv env .env
 Editar .env con tus datos de MySQL:
 envDB_DATABASE=nombre_base_datos
 DB_USERNAME=tu_usuario
@@ -19,7 +18,15 @@ php artisan migrate --seed
 php artisan storage:link
 4. Iniciar servidor
 bashphp artisan serve
-Acceder a: http://localhost:8000
-👥 Credenciales
-Admin: admin@campestre.com / password
-Cliente: cliente@campestre.com / password
+```
+
+Acceder a: **http://localhost:8000**
+
+---
+
+## 👥 Credenciales de Acceso
+
+| Rol | Email | Contraseña |
+|-----|-------|------------|
+| **Admin** | admin@campestre.com | password |
+| **Cliente** | cliente@campestre.com | password |
