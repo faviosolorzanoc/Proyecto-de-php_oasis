@@ -28,7 +28,7 @@ class ProductoController extends Controller
             'precio' => 'required|numeric|min:0',
             'categoria' => 'required|in:comida,bebida,snack',
             'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'stock' => 'required|integer|min:0',
+            
         ]);
 
         $data = $request->except('imagen');
@@ -61,7 +61,7 @@ class ProductoController extends Controller
             'precio' => 'required|numeric|min:0',
             'categoria' => 'required|in:comida,bebida,snack',
             'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'stock' => 'required|integer|min:0',
+            
         ]);
 
         $data = $request->except('imagen');

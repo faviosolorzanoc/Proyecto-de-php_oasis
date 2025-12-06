@@ -49,13 +49,7 @@
                 @enderror
             </div>
 
-            <div class="mb-3">
-                <label for="stock" class="form-label">Stock *</label>
-                <input type="number" class="form-control @error('stock') is-invalid @enderror" id="stock" name="stock" value="{{ old('stock', 0) }}" required>
-                @error('stock')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
+            
 
             <div class="mb-3">
                 <label for="imagen" class="form-label">Imagen del Producto</label>

@@ -69,29 +69,66 @@ class ReservaController extends Controller
 
     public function resumen(Request $request)
     {
-        $request->validate([
-            'horario_id' => 'required|exists:horarios,id',
+        // VALIDACIÓN ACTUALIZADA: Ahora acepta múltiples horarios
+        $validated = $request->validate([
+            'horarios' => 'required|array|min:1',
+            'horarios.*' => 'exists:horarios,id',
             'fecha_evento' => 'required|date',
             'num_personas' => 'required|integer',
+            'servicios' => 'nullable|array',
+            'servicios.*' => 'exists:servicios,id',
+        ], [
+            'horarios.required' => 'Debes seleccionar al menos un horario',
+            'horarios.min' => 'Debes seleccionar al menos un horario',
         ]);
 
-        // Guardar TODO en sesión
-        session()->put('reserva_temp', [
-            'horario_id' => $request->horario_id,
-            'fecha_evento' => $request->fecha_evento,
-            'num_personas' => $request->num_personas,
-            'servicios' => $request->servicios ?? [],
-            'observaciones' => $request->observaciones,
-        ]);
+        // Obtener los horarios seleccionados con sus espacios
+        $horariosSeleccionados = Horario::with('espacio')
+            ->whereIn('id', $request->horarios)
+            ->get();
 
-        $horario = Horario::with('espacio')->findOrFail($request->horario_id);
-        $espacio = $horario->espacio;
+        // VALIDACIÓN: Solo UN horario por espacio
+        $espaciosPorHorario = $horariosSeleccionados->groupBy('espacio_id');
         
-        $inicio = \Carbon\Carbon::parse($horario->hora_inicio);
-        $fin = \Carbon\Carbon::parse($horario->hora_fin);
-        $duracion = $inicio->diffInHours($fin);
-        $costoEspacio = $duracion * $espacio->precio_hora;
+        foreach ($espaciosPorHorario as $espacioId => $horarios) {
+            if ($horarios->count() > 1) {
+                return back()
+                    ->withErrors(['horarios' => 'Solo puedes seleccionar UN horario por cada espacio'])
+                    ->withInput();
+            }
+        }
+
+        // VALIDACIÓN: Verificar disponibilidad de cada horario
+        foreach ($horariosSeleccionados as $horario) {
+            if ($horario->estado !== 'disponible') {
+                return back()
+                    ->withErrors(['horarios' => 'Uno de los horarios seleccionados ya no está disponible'])
+                    ->withInput();
+            }
+        }
+
+        // CALCULAR COSTOS DE TODOS LOS HORARIOS
+        $costoEspacioTotal = 0;
+        $detallesEspacios = [];
+
+        foreach ($horariosSeleccionados as $horario) {
+            $espacio = $horario->espacio;
+            $inicio = \Carbon\Carbon::parse($horario->hora_inicio);
+            $fin = \Carbon\Carbon::parse($horario->hora_fin);
+            $duracion = $inicio->diffInHours($fin);
+            $costoEspacio = $duracion * $espacio->precio_hora;
+            
+            $costoEspacioTotal += $costoEspacio;
+            
+            $detallesEspacios[] = [
+                'espacio' => $espacio,
+                'horario' => $horario,
+                'duracion' => $duracion,
+                'costo' => $costoEspacio,
+            ];
+        }
         
+        // CALCULAR SERVICIOS
         $servicios = collect([]);
         $costoServicios = 0;
         if ($request->servicios) {
@@ -99,19 +136,28 @@ class ReservaController extends Controller
             $costoServicios = $servicios->sum('precio');
         }
         
-        $total = $costoEspacio + $costoServicios;
+        $total = $costoEspacioTotal + $costoServicios;
+
+        // GUARDAR EN SESIÓN (ahora con múltiples horarios)
+        session()->put('reserva_temp', [
+            'horarios' => $request->horarios, // Cambio: ahora es array
+            'fecha_evento' => $request->fecha_evento,
+            'num_personas' => $request->num_personas,
+            'servicios' => $request->servicios ?? [],
+            'observaciones' => $request->observaciones,
+        ]);
 
         session()->put('reserva_costos', [
-            'costo_espacio' => $costoEspacio,
+            'costo_espacio' => $costoEspacioTotal,
             'costo_servicios' => $costoServicios,
             'total' => $total,
         ]);
 
+        // PASAR DATOS A LA VISTA
         return view('cliente.reservas.resumen', compact(
-            'espacio',
-            'horario',
+            'detallesEspacios',
             'servicios',
-            'costoEspacio',
+            'costoEspacioTotal',
             'costoServicios',
             'total',
             'request'
@@ -143,8 +189,26 @@ class ReservaController extends Controller
         $costos = session('reserva_costos');
         $metodoPago = session('reserva_metodo_pago');
 
-        $horario = Horario::with('espacio')->findOrFail($reservaTemp['horario_id']);
-        $espacio = $horario->espacio;
+        // ACTUALIZADO: Obtener múltiples horarios
+        $horariosSeleccionados = Horario::with('espacio')
+            ->whereIn('id', $reservaTemp['horarios'])
+            ->get();
+
+        $detallesEspacios = [];
+        foreach ($horariosSeleccionados as $horario) {
+            $espacio = $horario->espacio;
+            $inicio = \Carbon\Carbon::parse($horario->hora_inicio);
+            $fin = \Carbon\Carbon::parse($horario->hora_fin);
+            $duracion = $inicio->diffInHours($fin);
+            $costoEspacio = $duracion * $espacio->precio_hora;
+            
+            $detallesEspacios[] = [
+                'espacio' => $espacio,
+                'horario' => $horario,
+                'duracion' => $duracion,
+                'costo' => $costoEspacio,
+            ];
+        }
         
         $servicios = collect([]);
         if (!empty($reservaTemp['servicios'])) {
@@ -152,8 +216,7 @@ class ReservaController extends Controller
         }
 
         return view('cliente.reservas.confirmar-pago', compact(
-            'espacio',
-            'horario',
+            'detallesEspacios',
             'servicios',
             'metodoPago',
             'reservaTemp',
@@ -176,8 +239,26 @@ class ReservaController extends Controller
         $reservaTemp = session('reserva_temp');
         $costos = session('reserva_costos');
 
-        $horario = Horario::with('espacio')->findOrFail($reservaTemp['horario_id']);
-        $espacio = $horario->espacio;
+        // ACTUALIZADO: Obtener múltiples horarios
+        $horariosSeleccionados = Horario::with('espacio')
+            ->whereIn('id', $reservaTemp['horarios'])
+            ->get();
+
+        $detallesEspacios = [];
+        foreach ($horariosSeleccionados as $horario) {
+            $espacio = $horario->espacio;
+            $inicio = \Carbon\Carbon::parse($horario->hora_inicio);
+            $fin = \Carbon\Carbon::parse($horario->hora_fin);
+            $duracion = $inicio->diffInHours($fin);
+            $costoEspacio = $duracion * $espacio->precio_hora;
+            
+            $detallesEspacios[] = [
+                'espacio' => $espacio,
+                'horario' => $horario,
+                'duracion' => $duracion,
+                'costo' => $costoEspacio,
+            ];
+        }
         
         $servicios = collect([]);
         if (!empty($reservaTemp['servicios'])) {
@@ -187,12 +268,11 @@ class ReservaController extends Controller
         $request = (object) $reservaTemp;
 
         return view('cliente.reservas.resumen', compact(
-            'espacio',
-            'horario',
+            'detallesEspacios',  // ← IMPORTANTE: debe ser este nombre
             'servicios',
             'request'
         ))->with([
-            'costoEspacio' => $costos['costo_espacio'],
+            'costoEspacioTotal' => $costos['costo_espacio'],  // ← Fíjate que cambié el nombre
             'costoServicios' => $costos['costo_servicios'],
             'total' => $costos['total'],
         ]);
@@ -211,80 +291,172 @@ class ReservaController extends Controller
         $rules = [];
 
         if ($metodoPago === 'yape') {
-            $rules['yape_codigo'] = 'required|digits:6';
-            $rules['yape_telefono'] = 'required|digits:9';
+            $rules['yape_codigo'] = 'required|numeric|digits:6';
+            $rules['yape_telefono'] = 'required|numeric|digits:9';
         } elseif ($metodoPago === 'tarjeta') {
-            $rules['tarjeta_numero'] = 'required|string|min:13|max:19';
+            $rules['tarjeta_numero'] = 'required|numeric|min:13';
             $rules['tarjeta_nombre'] = 'required|string|max:100';
-            $rules['tarjeta_expiracion'] = 'required|regex:/^\d{2}\/\d{2}$/';
-            $rules['tarjeta_cvv'] = 'required|digits_between:3,4';
+            $rules['tarjeta_expiracion'] = 'required|size:5';
+            $rules['tarjeta_cvv'] = 'required|numeric|digits_between:3,4';
         }
 
-        if (!empty($rules)) {
-            $validated = $request->validate($rules, [
-                'yape_codigo.digits' => 'El código debe tener 6 dígitos',
-                'yape_telefono.digits' => 'El teléfono debe tener 9 dígitos',
-                'tarjeta_expiracion.regex' => 'Formato inválido (MM/AA)',
-            ]);
+        try {
+            if (!empty($rules)) {
+                $request->validate($rules, [
+                    'yape_codigo.required' => 'El código de operación es obligatorio',
+                    'yape_codigo.numeric' => 'Solo números',
+                    'yape_codigo.digits' => 'Debe tener 6 dígitos',
+                    'yape_telefono.required' => 'El teléfono es obligatorio',
+                    'yape_telefono.numeric' => 'Solo números',
+                    'yape_telefono.digits' => 'Debe tener 9 dígitos',
+                    'tarjeta_numero.required' => 'El número de tarjeta es obligatorio',
+                    'tarjeta_numero.numeric' => 'Solo números permitidos',
+                    'tarjeta_numero.min' => 'Mínimo 13 dígitos',
+                    'tarjeta_nombre.required' => 'El nombre es obligatorio',
+                    'tarjeta_expiracion.required' => 'La fecha es obligatoria',
+                    'tarjeta_expiracion.size' => 'Formato MM/AA',
+                    'tarjeta_cvv.required' => 'El CVV es obligatorio',
+                    'tarjeta_cvv.numeric' => 'Solo números',
+                    'tarjeta_cvv.digits_between' => '3 o 4 dígitos',
+                ]);
+            }
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->withErrors($e->validator)->withInput();
         }
 
-        if ($metodoPago === 'yape' && $request->yape_codigo === '000000') {
-            return back()->with('error', '❌ Código de operación inválido');
+        // Validaciones simples de simulación
+        if ($metodoPago === 'yape') {
+            if ($request->yape_codigo === '000000') {
+                return back()->withInput()->with('error', '❌ Código inválido');
+            }
+            
+            if (!str_starts_with($request->yape_telefono, '9')) {
+                return back()->withInput()->with('error', '❌ El teléfono debe empezar con 9');
+            }
         }
 
         if ($metodoPago === 'tarjeta') {
-            list($mes, $anio) = explode('/', $request->tarjeta_expiracion);
-            $fechaExpiracion = "20" . $anio . "-" . $mes . "-01";
+            if (preg_match('/^(\d{2})\/(\d{2})$/', $request->tarjeta_expiracion, $matches)) {
+                $mes = (int)$matches[1];
+                $anio = (int)$matches[2];
+                $mesActual = (int)date('m');
+                $anioActual = (int)date('y');
+                
+                if ($anio < $anioActual || ($anio == $anioActual && $mes < $mesActual)) {
+                    return back()->withInput()->with('error', '❌ Tarjeta vencida');
+                }
+            } else {
+                return back()->withInput()->with('error', '❌ Formato de fecha inválido. Use MM/AA');
+            }
             
-            if (strtotime($fechaExpiracion) < strtotime(date('Y-m-01'))) {
-                return back()->with('error', '❌ Tarjeta vencida');
+            if (substr($request->tarjeta_numero, -4) === '0000') {
+                return back()->withInput()->with('error', '❌ Tarjeta rechazada');
             }
         }
 
         DB::beginTransaction();
         try {
-            $horario = Horario::findOrFail($reservaTemp['horario_id']);
+            $reservasCreadas = [];
             
-            if ($horario->estado !== 'disponible') {
-                DB::rollBack();
-                return back()->with('error', 'Este horario ya no está disponible');
+            // CALCULAR COSTO DE SERVICIOS UNA SOLA VEZ
+            $servicios = collect([]);
+            $costoServicios = 0;
+            if (!empty($reservaTemp['servicios'])) {
+                $servicios = Servicio::whereIn('id', $reservaTemp['servicios'])->get();
+                $costoServicios = $servicios->sum('precio');
             }
+            
+            // Distribuir costo de servicios entre todos los horarios
+            $costoServiciosPorReserva = count($reservaTemp['horarios']) > 0 
+                ? $costoServicios / count($reservaTemp['horarios']) 
+                : 0;
+            
+            // CREAR MÚLTIPLES RESERVAS (una por cada horario)
+            foreach ($reservaTemp['horarios'] as $horarioId) {
+                $horario = Horario::findOrFail($horarioId);
+                
+                if ($horario->estado !== 'disponible') {
+                    DB::rollBack();
+                    return back()->with('error', '❌ Uno de los horarios ya no está disponible');
+                }
 
-            $reserva = Reserva::create([
-                'user_id' => auth()->id(),
-                'espacio_id' => $horario->espacio_id,
-                'horario_id' => $reservaTemp['horario_id'],
-                'fecha_evento' => $reservaTemp['fecha_evento'],
-                'hora_inicio' => $horario->hora_inicio,
-                'hora_fin' => $horario->hora_fin,
-                'num_personas' => $reservaTemp['num_personas'],
-                'total' => $costos['total'],
-                'metodo_pago' => $metodoPago,
-                'estado' => 'confirmada',
-                'estado_pago' => $metodoPago == 'efectivo' ? 'pendiente' : 'pagado',
-                'observaciones' => $reservaTemp['observaciones'],
-                'servicios_adicionales' => $reservaTemp['servicios'],
-            ]);
+                // CALCULAR COSTO INDIVIDUAL DE ESTE ESPACIO
+                $espacio = $horario->espacio;
+                $inicio = \Carbon\Carbon::parse($horario->hora_inicio);
+                $fin = \Carbon\Carbon::parse($horario->hora_fin);
+                $duracion = $inicio->diffInHours($fin);
+                $costoEspacio = $duracion * $espacio->precio_hora;
+                
+                // TOTAL = costo del espacio + parte proporcional de servicios
+                $totalReserva = $costoEspacio + $costoServiciosPorReserva;
 
-            $horario->marcarComoOcupado($reserva->id);
+                $reserva = Reserva::create([
+                    'user_id' => auth()->id(),
+                    'espacio_id' => $horario->espacio_id,
+                    'horario_id' => $horarioId,
+                    'fecha_evento' => $reservaTemp['fecha_evento'],
+                    'hora_inicio' => $horario->hora_inicio,
+                    'hora_fin' => $horario->hora_fin,
+                    'num_personas' => $reservaTemp['num_personas'],
+                    'total' => $totalReserva, // ← COSTO REAL DE ESTE ESPACIO
+                    'metodo_pago' => $metodoPago,
+                    'estado' => 'confirmada',
+                    'estado_pago' => $metodoPago == 'efectivo' ? 'pendiente' : 'pagado',
+                    'observaciones' => $reservaTemp['observaciones'],
+                    'servicios_adicionales' => $reservaTemp['servicios'],
+                ]);
+
+                $horario->marcarComoOcupado($reserva->id);
+                $reservasCreadas[] = $reserva;
+            }
 
             session()->forget(['reserva_temp', 'reserva_costos', 'reserva_metodo_pago']);
 
             DB::commit();
 
+            $totalFinal = collect($reservasCreadas)->sum('total');
+
             $mensaje = match($metodoPago) {
-                'efectivo' => '✅ Reserva confirmada. Paga S/.' . number_format($costos['total'], 2) . ' al llegar.',
-                'yape' => '✅ Pago Yape registrado por S/.' . number_format($costos['total'], 2),
-                'tarjeta' => '✅ Pago procesado por S/.' . number_format($costos['total'], 2),
+                'efectivo' => '✅ Reserva confirmada. Paga S/.' . number_format($totalFinal, 2) . ' al llegar.',
+                'yape' => '✅ Pago Yape procesado. Reserva confirmada por S/.' . number_format($totalFinal, 2),
+                'tarjeta' => '✅ Pago procesado exitosamente. Reserva confirmada por S/.' . number_format($totalFinal, 2),
                 default => '✅ Reserva confirmada.'
             };
 
-            return redirect()->route('cliente.reservas.confirmacion', $reserva->id)->with('success', $mensaje);
+            return redirect()->route('cliente.reservas.confirmacion', $reservasCreadas[0]->id)->with('success', $mensaje);
                 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Error: ' . $e->getMessage());
+            return back()->withInput()->with('error', '❌ Error: ' . $e->getMessage());
         }
+    }
+
+    private function validarLuhn($numero)
+    {
+        $numero = preg_replace('/\D/', '', $numero);
+        
+        if (strlen($numero) < 13 || strlen($numero) > 19) {
+            return false;
+        }
+        
+        $suma = 0;
+        $longitud = strlen($numero);
+        $paridad = $longitud % 2;
+        
+        for ($i = 0; $i < $longitud; $i++) {
+            $digito = (int)$numero[$i];
+            
+            if ($i % 2 == $paridad) {
+                $digito *= 2;
+                if ($digito > 9) {
+                    $digito -= 9;
+                }
+            }
+            
+            $suma += $digito;
+        }
+        
+        return ($suma % 10) == 0;
     }
 
     public function confirmacion(Reserva $reserva)
@@ -293,9 +465,26 @@ class ReservaController extends Controller
             abort(403);
         }
 
-        return view('cliente.reservas.confirmacion', compact('reserva'));
-    }
+        // BUSCAR TODAS LAS RESERVAS DEL MISMO GRUPO
+        // (misma fecha_evento y creadas en el mismo minuto)
+        $reservasGrupo = Reserva::where('user_id', auth()->id())
+            ->where('fecha_evento', $reserva->fecha_evento)
+            ->whereRaw('DATE_FORMAT(created_at, "%Y-%m-%d %H:%i") = ?', [
+                $reserva->created_at->format('Y-m-d H:i')
+            ])
+            ->with('espacio', 'horario')
+            ->get();
 
+        $esMultiple = $reservasGrupo->count() > 1;
+        $totalGrupo = $reservasGrupo->sum('total');
+
+        return view('cliente.reservas.confirmacion', compact(
+            'reserva',
+            'reservasGrupo',
+            'esMultiple',
+            'totalGrupo'
+        ));
+    }
     public function misReservas()
     {
         $reservas = Reserva::where('user_id', auth()->id())
@@ -336,4 +525,39 @@ class ReservaController extends Controller
             return back()->with('error', 'Error: ' . $e->getMessage());
         }
     }
+
+    public function cancelarGrupo(Request $request)
+{
+    $request->validate([
+        'reservas' => 'required|array',
+        'reservas.*' => 'exists:reservas,id',
+    ]);
+
+    DB::beginTransaction();
+    try {
+        foreach ($request->reservas as $reservaId) {
+            $reserva = Reserva::findOrFail($reservaId);
+            
+            if ($reserva->user_id !== auth()->id()) {
+                abort(403);
+            }
+
+            if ($reserva->horario_id) {
+                $horario = Horario::find($reserva->horario_id);
+                if ($horario) {
+                    $horario->liberar();
+                }
+            }
+
+            $reserva->update(['estado' => 'cancelada']);
+        }
+
+        DB::commit();
+        return back()->with('success', 'Reservas canceladas exitosamente');
+        
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return back()->with('error', 'Error: ' . $e->getMessage());
+    }
+}
 }

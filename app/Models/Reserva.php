@@ -12,7 +12,7 @@ class Reserva extends Model
     protected $fillable = [
         'user_id',
         'espacio_id',
-        'horario_id',  // ← Debe estar aquí
+        'horario_id',
         'fecha_evento',
         'hora_inicio',
         'hora_fin',
@@ -44,5 +44,16 @@ class Reserva extends Model
     public function horario()
     {
         return $this->belongsTo(Horario::class);
+    }
+
+    // Método para obtener servicios desde el array JSON
+    public function getServiciosAttribute()
+    {
+        if (!$this->servicios_adicionales || !is_array($this->servicios_adicionales)) {
+            return collect([]);
+        }
+
+        // Cargar servicios desde la BD usando los IDs guardados
+        return Servicio::whereIn('id', $this->servicios_adicionales)->get();
     }
 }
